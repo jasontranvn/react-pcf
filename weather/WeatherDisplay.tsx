@@ -38,6 +38,15 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ zipCode }) => {
   const [weatherData, setWeatherData] = useState<WeatherDay[]>([]);
   const [selectedDay, setSelectedDay] = useState<WeatherDay | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isAscendingSort, setIsAscendingSort] = useState(true);
+
+  const compareDates = (a: WeatherDay, b: WeatherDay) => {
+    if (isAscendingSort) {
+      return a.dt - b.dt;
+    } else {
+      return b.dt - a.dt;
+    }
+  };
 
   useEffect(() => {
     const fetchWeather = async () => {
@@ -82,6 +91,11 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ zipCode }) => {
     setSelectedDay(null);
   };
 
+  const handleSortByDate = () => {
+    setIsAscendingSort(!isAscendingSort);
+    setWeatherData((prevData) => prevData.sort(compareDates)); // Update state with sorted data
+  };
+
   const Modal = ({ day, onClose }: ModalProps) => {
     return (
       <div
@@ -96,7 +110,7 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ zipCode }) => {
           borderRadius: '8px',
           boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
           textAlign: 'center',
-          marginBottom: '10px',
+          marginBottom: '20px',
         }}
       >
         {' '}
@@ -132,27 +146,35 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ zipCode }) => {
         <p className="error">{error}</p>
       ) : (
         weatherData.length > 0 && (
-          <div className="forecast-list">
-            {weatherData.map((day) => (
-              <div
-                key={day.dt}
-                className="day-forecast"
-                onClick={() => handleDayClick(day)}
-              >
-                <h3>{new Date(day.dt * 1000).toDateString()}</h3>
-                <p>
-                  High: {convertKelvinToFahrenheit(day.temp.max)}°F Low:{' '}
-                  {convertKelvinToFahrenheit(day.temp.min)}°F
-                </p>
-                <p>
-                  {day.weather[0].description
-                    .split(' ')
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(' ')}
-                </p>
-              </div>
-            ))}
-          </div>
+          <table className="forecast-table">
+            <thead>
+              <tr>
+                <th onClick={handleSortByDate}>
+                  Date {isAscendingSort ? '▲' : '▼'}
+                </th>
+                <th>High (°F)</th>
+                <th>Low (°F)</th>
+                <th>Conditions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {weatherData.map((day) => (
+                <tr key={day.dt} onClick={() => handleDayClick(day)}>
+                  <td>{new Date(day.dt * 1000).toDateString()}</td>
+                  <td>{convertKelvinToFahrenheit(day.temp.max)}</td>
+                  <td>{convertKelvinToFahrenheit(day.temp.min)}</td>
+                  <td>
+                    {day.weather[0].description
+                      .split(' ')
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1),
+                      )
+                      .join(' ')}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )
       )}
       {selectedDay && <Modal day={selectedDay} onClose={handleModalClose} />}
