@@ -39,6 +39,7 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ zipCode }) => {
   const [selectedDay, setSelectedDay] = useState<WeatherDay | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isAscendingSort, setIsAscendingSort] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const compareDates = (a: WeatherDay, b: WeatherDay) => {
     if (isAscendingSort) {
@@ -93,8 +94,16 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ zipCode }) => {
 
   const handleSortByDate = () => {
     setIsAscendingSort(!isAscendingSort);
-    setWeatherData((prevData) => prevData.sort(compareDates)); // Update state with sorted data
+    setWeatherData((prevData) => prevData.sort(compareDates));
   };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value.toLowerCase());
+  };
+
+  const filteredWeatherData = weatherData.filter((day) => {
+    return day.weather[0].description.toLowerCase().includes(searchQuery);
+  });
 
   const Modal = ({ day, onClose }: ModalProps) => {
     return (
@@ -142,44 +151,54 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ zipCode }) => {
   return (
     <div className="weather-app">
       <h1>7 Day Weather Forecast For Zipcode {zipCode} Area</h1>
+      <div className="search-container">
+        <input
+          type="text"
+          placeholder="Search by description"
+          value={searchQuery}
+          onChange={handleSearchChange}
+        />
+      </div>
       {error ? (
         <p className="error">{error}</p>
       ) : (
         weatherData.length > 0 && (
-          <table className="forecast-table">
-            <thead>
-              <tr>
-                <th onClick={handleSortByDate}>
-                  Date {isAscendingSort ? '▲' : '▼'}
-                </th>
-                <th>High (°F)</th>
-                <th>Low (°F)</th>
-                <th>Conditions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {weatherData.map((day) => (
-                <tr key={day.dt} onClick={() => handleDayClick(day)}>
-                  <td>{new Date(day.dt * 1000).toDateString()}</td>
-                  <td>{convertKelvinToFahrenheit(day.temp.max)}</td>
-                  <td>{convertKelvinToFahrenheit(day.temp.min)}</td>
-                  <td>
-                    {day.weather[0].description
-                      .split(' ')
-                      .map(
-                        (word) => word.charAt(0).toUpperCase() + word.slice(1),
-                      )
-                      .join(' ')}
-                  </td>
+          <>
+            <table className="forecast-table">
+              <thead>
+                <tr>
+                  <th onClick={handleSortByDate}>
+                    Date {isAscendingSort ? '▲' : '▼'}
+                  </th>
+                  <th>High (°F)</th>
+                  <th>Low (°F)</th>
+                  <th>Conditions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredWeatherData.map((day) => (
+                  <tr key={day.dt} onClick={() => handleDayClick(day)}>
+                    <td>{new Date(day.dt * 1000).toDateString()}</td>
+                    <td>{convertKelvinToFahrenheit(day.temp.max)}</td>
+                    <td>{convertKelvinToFahrenheit(day.temp.min)}</td>
+                    <td>
+                      {day.weather[0].description
+                        .split(' ')
+                        .map(
+                          (word) =>
+                            word.charAt(0).toUpperCase() + word.slice(1),
+                        )
+                        .join(' ')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         )
       )}
       {selectedDay && <Modal day={selectedDay} onClose={handleModalClose} />}
     </div>
   );
 };
-
 export default WeatherDisplay;
