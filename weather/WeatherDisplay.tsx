@@ -1,5 +1,8 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
+import { SearchBox } from '@fluentui/react/lib/SearchBox';
+import { DetailsList, IColumn } from '@fluentui/react/lib/DetailsList';
+import { Stack, IStackTokens } from '@fluentui/react/lib/Stack';
 import './WeatherDisplay.css';
 
 interface WeatherDay {
@@ -33,6 +36,7 @@ interface ModalProps {
 
 const apiKey = 'c05629370b6d54c4064ee341b43825be'; // not the best practice i know :(
 const iconBaseUrl = 'http://openweathermap.org/img/wn/';
+const recordsCount = '7';
 
 const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ zipCode }) => {
   const [weatherData, setWeatherData] = useState<WeatherDay[]>([]);
@@ -40,6 +44,8 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ zipCode }) => {
   const [error, setError] = useState<string | null>(null);
   const [isAscendingSort, setIsAscendingSort] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const stackTokens: IStackTokens = { childrenGap: 20 };
 
   const compareDates = (a: WeatherDay, b: WeatherDay) => {
     if (isAscendingSort) {
@@ -49,7 +55,42 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ zipCode }) => {
     }
   };
 
+  const columns: IColumn[] = [
+    {
+      key: 'column1',
+      name: 'Date',
+      fieldName: 'date',
+      minWidth: 100,
+      maxWidth: 200,
+      isSorted: true,
+      isSortedDescending: !isAscendingSort,
+      onColumnClick: () => handleSortByDate(),
+    },
+    {
+      key: 'column2',
+      name: 'High (°F)',
+      fieldName: 'high',
+      minWidth: 100,
+      maxWidth: 200,
+    },
+    {
+      key: 'column3',
+      name: 'Low (°F)',
+      fieldName: 'low',
+      minWidth: 100,
+      maxWidth: 200,
+    },
+    {
+      key: 'column4',
+      name: 'Conditions',
+      fieldName: 'conditions',
+      minWidth: 100,
+      maxWidth: 200,
+    },
+  ];
+
   useEffect(() => {
+    setIsAscendingSort(false);
     const fetchWeather = async () => {
       try {
         // Fetch latitude and longitude from ZIP code
@@ -149,56 +190,47 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ zipCode }) => {
   };
 
   return (
-    <div className="weather-app">
-      <h1>7 Day Weather Forecast For Zipcode {zipCode} Area</h1>
-      <div className="search-container">
-        <input
-          type="text"
-          placeholder="Search by description"
-          value={searchQuery}
-          onChange={handleSearchChange}
-        />
-      </div>
+    <Stack tokens={stackTokens}>
+      <h1 className="header">
+        {recordsCount}Day Weather Forecast For Zipcode 78758 Area
+      </h1>
+      <SearchBox
+        placeholder="Filter by type of weather"
+        value={searchQuery}
+        onChange={(
+          event: React.ChangeEvent<HTMLInputElement> | undefined,
+          newValue?: string | undefined,
+        ) => {
+          if (event) {
+            handleSearchChange(event);
+          }
+        }}
+      />
       {error ? (
         <p className="error">{error}</p>
       ) : (
         weatherData.length > 0 && (
-          <>
-            <table className="forecast-table">
-              <thead>
-                <tr>
-                  <th onClick={handleSortByDate}>
-                    Date {isAscendingSort ? '▲' : '▼'}
-                  </th>
-                  <th>High (°F)</th>
-                  <th>Low (°F)</th>
-                  <th>Conditions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredWeatherData.map((day) => (
-                  <tr key={day.dt} onClick={() => handleDayClick(day)}>
-                    <td>{new Date(day.dt * 1000).toDateString()}</td>
-                    <td>{convertKelvinToFahrenheit(day.temp.max)}</td>
-                    <td>{convertKelvinToFahrenheit(day.temp.min)}</td>
-                    <td>
-                      {day.weather[0].description
-                        .split(' ')
-                        .map(
-                          (word) =>
-                            word.charAt(0).toUpperCase() + word.slice(1),
-                        )
-                        .join(' ')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
+          <DetailsList
+            items={filteredWeatherData.map((day) => ({
+              key: day.dt,
+              date: new Date(day.dt * 1000).toDateString(),
+              high: convertKelvinToFahrenheit(day.temp.max),
+              low: convertKelvinToFahrenheit(day.temp.min),
+              conditions: day.weather[0].description
+                .split(' ')
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' '),
+            }))}
+            columns={columns}
+            onItemInvoked={(item) =>
+              handleDayClick(weatherData.find((day) => day.dt === item.key)!)
+            }
+          />
         )
       )}
       {selectedDay && <Modal day={selectedDay} onClose={handleModalClose} />}
-    </div>
+    </Stack>
   );
 };
+
 export default WeatherDisplay;

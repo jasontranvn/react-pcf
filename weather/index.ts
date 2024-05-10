@@ -1,7 +1,7 @@
 import { IInputs, IOutputs } from './generated/ManifestTypes';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import WeatherDisplay from './WeatherDisplay'; // Assuming this is your React component
+import WeatherDisplay from './WeatherDisplay';
 
 export class Weather
   implements ComponentFramework.StandardControl<IInputs, IOutputs>
