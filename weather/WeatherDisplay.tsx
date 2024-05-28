@@ -192,7 +192,7 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ zipCode }) => {
   return (
     <Stack tokens={stackTokens}>
       <h1 className="header">
-        {recordsCount}Day Weather Forecast For Zipcode 78758 Area
+        {recordsCount} Day Weather Forecast For Zipcode {zipCode} Area
       </h1>
       <SearchBox
         placeholder="Filter by type of weather"
